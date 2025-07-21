@@ -19,6 +19,8 @@ path.ts is an object-oriented filesystem path management library for TypeScript/
 ### Development
 - When testing is requested without specific framework mentioned, use Deno's built-in test runner
 - Tests follow the pattern `*_test.ts`
+- `deno lint` - Run code linting
+- After code writing, always run lint, test, and doctest to ensure code quality and correctness
 
 ## Architecture
 
