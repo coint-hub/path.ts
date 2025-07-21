@@ -1,6 +1,10 @@
 {
+  "tasks": {
+    "doctest": "deno test --doc"
+  },
   "imports": {
     "@result/result": "jsr:@result/result@^1.1.1",
     "@std/assert": "jsr:@std/assert@1"
-  }
+  },
+  "exports": { ".": "./mod.ts" }
 }
