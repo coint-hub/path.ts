@@ -34,3 +34,17 @@ Current modules:
 - JSDoc examples should be executable as doctests
 - Validation functions return error arrays (empty array = valid)
 - Reference external sources (e.g., Wikipedia for filesystem limits) in comments and JSDoc
+
+## Commit Message Guidelines
+
+- Follow Conventional Commits specification
+  - Use clear, concise, and descriptive commit messages
+  - Structure: `<type>(<scope>): <description>`
+  - Common types include:
+    - `feat`: New feature
+    - `fix`: Bug fix
+    - `docs`: Documentation changes
+    - `style`: Code formatting
+    - `refactor`: Code refactoring
+    - `test`: Adding or modifying tests
+    - `chore`: Maintenance tasks
