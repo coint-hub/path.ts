@@ -19,11 +19,11 @@
  * ```ts
  * import { assertEquals } from "@std/assert";
  * import { fileNameValidate } from "./filename.ts";
- * import { Result } from "@result/result";
+ * import { Result, ok, err } from "./result.ts";
  *
  * assertEquals(
  *   fileNameValidate("document.txt"),
- *   Result.ok("document.txt")
+ *   ok("document.txt")
  * );
  * ```
  *
@@ -31,11 +31,11 @@
  * ```ts
  * import { assertEquals } from "@std/assert";
  * import { fileNameValidate, type FileNameValidateError } from "./filename.ts";
- * import { Result } from "@result/result";
+ * import { Result, ok, err } from "./result.ts";
  *
  * assertEquals(
  *   fileNameValidate('file:name.txt'),
- *   Result.err<FileNameValidateError[]>([{
+ *   err<FileNameValidateError[]>([{
  *     kind: 'INVALID_CHAR',
  *     chars: [':'],
  *     filesystem: 'FAT32/exFAT/NTFS'
@@ -47,19 +47,19 @@
  * ```ts
  * import { assertEquals } from "@std/assert";
  * import { fileNameValidate, type FileNameValidateError } from "./filename.ts";
- * import { Result } from "@result/result";
+ * import { Result, ok, err } from "./result.ts";
  *
  * const longName = "a".repeat(256);
  * assertEquals(
  *   fileNameValidate(longName),
- *   Result.err<FileNameValidateError[]>([
+ *   err<FileNameValidateError[]>([
  *     { kind: 'TOO_LONG', max: 255, actual: 256 },
  *     { kind: 'UTF8_TOO_LONG', max: 255, actual: 256 }
  *   ])
  * );
  * ```
  */
-import { Result } from "@result/result";
+import { err, ok, Result } from "./result.ts";
 
 export function fileNameValidate(name: string): FileNameValidationResult {
   const errors: FileNameValidateError[] = [];
@@ -119,7 +119,11 @@ export function fileNameValidate(name: string): FileNameValidationResult {
 
   // Note: ext2/3/4 and XFS only restrict NUL and '/', which are already covered
 
-  return errors.length === 0 ? Result.ok(name) : Result.err(errors);
+  if (errors.length) {
+    return err(errors);
+  }
+
+  return ok(name);
 }
 
 export type FileNameValidateError =

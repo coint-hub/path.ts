@@ -1,4 +1,4 @@
-import { Result } from "@result/result";
+import { Result, ok } from "./result.ts";
 import { fileNameValidate, FileNameValidateError } from "./filename.ts";
 
 // we will support only POSIX path for now
@@ -18,17 +18,29 @@ export abstract class AbstractPath {
   }
 
   static file(name: string): Result<File, FileNameValidateError[]> {
-    return fileNameValidate(name).map((name) => new File(name));
+    const result = fileNameValidate(name);
+    if (!result.success) {
+      return result;
+    }
+    return ok(new File(result.value));
   }
 
   static directory(name: string): Result<Directory, FileNameValidateError[]> {
-    return fileNameValidate(name).map((name) => new Directory(name));
+    const result = fileNameValidate(name);
+    if (!result.success) {
+      return result;
+    }
+    return ok(new Directory(result.value));
   }
 
   static symbolickLink(
     name: string,
   ): Result<SymbolicLink, FileNameValidateError[]> {
-    return fileNameValidate(name).map((name) => new SymbolicLink(name));
+    const result = fileNameValidate(name);
+    if (!result.success) {
+      return result;
+    }
+    return ok(new SymbolicLink(result.value));
   }
 }
 
