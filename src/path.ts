@@ -33,6 +33,15 @@ export class Directory extends AbstractPath {
     return parentFullPath + joiner + this.name;
   }
 
+  directory(name: string): Result<Directory, FileNameValidateError[]> {
+    const validatedName = fileNameValidate(name);
+    if (!validatedName.success) {
+      return err(validatedName.error);
+    }
+
+    return ok(new Directory(validatedName.value, this));
+  }
+
   static build(path: string): Result<Directory, BuildDirectoryError> {
     if (!path.startsWith("/")) {
       return err({ kind: "NOT_ABSOLUTE_PATH", path });

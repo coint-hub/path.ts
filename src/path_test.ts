@@ -51,3 +51,22 @@ Deno.test("Directory.fullPath", () => {
   assert(deep.success);
   assertEquals(deep.value.fullPath, "/home/user/documents");
 });
+
+Deno.test("Directory.directory() - valid name", () => {
+  const parent = Directory.build("/home");
+  assert(parent.success);
+
+  const child = parent.value.directory("user");
+  assert(child.success);
+  assertEquals(child.value.name, "user");
+  assertEquals(child.value.fullPath, "/home/user");
+});
+
+Deno.test("Directory.directory() - invalid name", () => {
+  const parent = Directory.build("/home");
+  assert(parent.success);
+
+  const invalidChild = parent.value.directory("user/");
+  assert(!invalidChild.success);
+  assertEquals(invalidChild.error, [{ kind: "CONTAINS_PATH_SEPARATOR" }]);
+});
