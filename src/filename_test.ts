@@ -1,82 +1,114 @@
 import { assertEquals } from "@std/assert";
-import { validate } from "./filename.ts";
+import { validate, type ValidateError } from "./filename.ts";
+import { Result } from "@result/result";
 
 Deno.test("validate - empty name", () => {
-  const errors = validate("");
-  assertEquals(errors, ["Name cannot be empty"]);
+  assertEquals(
+    validate(""),
+    Result.err<ValidateError[]>([{ kind: "EMPTY" }]),
+  );
 });
 
 Deno.test("validate - valid names", () => {
-  assertEquals(validate("document.txt"), []);
-  assertEquals(validate("photo.jpg"), []);
-  assertEquals(validate("my-file_123"), []);
+  assertEquals(validate("document.txt"), Result.ok("document.txt"));
+  assertEquals(validate("photo.jpg"), Result.ok("photo.jpg"));
+  assertEquals(validate("my-file_123"), Result.ok("my-file_123"));
 });
 
 Deno.test("validate - reserved names", () => {
-  assertEquals(validate("."), ['"." is a reserved name']);
-  assertEquals(validate(".."), ['".." is a reserved name']);
+  assertEquals(
+    validate("."),
+    Result.err<ValidateError[]>([{ kind: "RESERVED", name: "." }]),
+  );
+  assertEquals(
+    validate(".."),
+    Result.err<ValidateError[]>([{ kind: "RESERVED", name: ".." }]),
+  );
 });
 
 Deno.test("validate - path separator", () => {
-  const errors = validate("folder/file.txt");
-  assertEquals(errors, ['Name cannot contain "/" character']);
+  assertEquals(
+    validate("folder/file.txt"),
+    Result.err<ValidateError[]>([{ kind: "CONTAINS_PATH_SEPARATOR" }]),
+  );
 });
 
 Deno.test("validate - null character", () => {
-  const errors = validate("file\0name");
-  assertEquals(errors, [
-    'Name cannot contain null character',
-    'Name contains control character (code 0) which is invalid on exFAT'
-  ]);
+  assertEquals(
+    validate("file\0name"),
+    Result.err<ValidateError[]>([
+      { kind: "CONTAINS_NULL" },
+      { kind: "CONTROL_CHAR", code: 0 },
+    ]),
+  );
 });
 
 Deno.test("validate - Windows invalid characters", () => {
-  const errors = validate('file*name?.txt');
-  assertEquals(errors, ['Name contains characters invalid on FAT32/exFAT/NTFS: * ?']);
+  assertEquals(
+    validate("file*name?.txt"),
+    Result.err<ValidateError[]>([
+      {
+        kind: "INVALID_CHAR",
+        chars: ["*", "?"],
+        filesystem: "FAT32/exFAT/NTFS",
+      },
+    ]),
+  );
 });
 
 Deno.test("validate - multiple Windows invalid characters", () => {
-  const errors = validate('file<>:"|*?.txt');
-  assertEquals(errors, ['Name contains characters invalid on FAT32/exFAT/NTFS: " * : < > ? |']);
+  assertEquals(
+    validate('file<>:"|*?.txt'),
+    Result.err<ValidateError[]>([
+      {
+        kind: "INVALID_CHAR",
+        chars: ['"', "*", ":", "<", ">", "?", "|"],
+        filesystem: "FAT32/exFAT/NTFS",
+      },
+    ]),
+  );
 });
 
 Deno.test("validate - control characters", () => {
-  const errors = validate("file\x01name.txt");
-  assertEquals(errors, ["Name contains control character (code 1) which is invalid on exFAT"]);
+  assertEquals(
+    validate("file\x01name.txt"),
+    Result.err<ValidateError[]>([{ kind: "CONTROL_CHAR", code: 1 }]),
+  );
 });
 
 Deno.test("validate - length exceeds 255 characters", () => {
   const longName = "a".repeat(256);
-  const errors = validate(longName);
-  assertEquals(errors, [
-    "Name exceeds 255 characters (256 characters)",
-    "Name exceeds 255 UTF-8 bytes for APFS (256 bytes)"
-  ]);
+  assertEquals(
+    validate(longName),
+    Result.err<ValidateError[]>([
+      { kind: "TOO_LONG", max: 255, actual: 256 },
+      { kind: "UTF8_TOO_LONG", max: 255, actual: 256 },
+    ]),
+  );
 });
 
 Deno.test("validate - exactly 255 characters", () => {
   const maxName = "a".repeat(255);
-  assertEquals(validate(maxName), []);
+  assertEquals(validate(maxName), Result.ok(maxName));
 });
 
 Deno.test("validate - UTF-8 byte length exceeds 255", () => {
   // Using emoji that takes 4 bytes in UTF-8
   const emojiName = "😀".repeat(64); // 64 * 4 = 256 bytes
-  const errors = validate(emojiName);
-  assertEquals(errors, ["Name exceeds 255 UTF-8 bytes for APFS (256 bytes)"]);
+  assertEquals(
+    validate(emojiName),
+    Result.err<ValidateError[]>([{ kind: "UTF8_TOO_LONG", max: 255, actual: 256 }]),
+  );
 });
 
 Deno.test("validate - multiple errors", () => {
-  const errors = validate("file/name*test\0");
-  errors.sort();
-  
-  const expectedErrors = [
-    'Name cannot contain "/" character',
-    'Name cannot contain null character',
-    'Name contains characters invalid on FAT32/exFAT/NTFS: *',
-    'Name contains control character (code 0) which is invalid on exFAT'
-  ];
-  expectedErrors.sort();
-  
-  assertEquals(errors, expectedErrors);
+  assertEquals(
+    validate("file/name*test\0"),
+    Result.err<ValidateError[]>([
+      { kind: "CONTAINS_PATH_SEPARATOR" },
+      { kind: "CONTAINS_NULL" },
+      { kind: "INVALID_CHAR", chars: ["*"], filesystem: "FAT32/exFAT/NTFS" },
+      { kind: "CONTROL_CHAR", code: 0 },
+    ]),
+  );
 });
