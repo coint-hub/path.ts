@@ -70,3 +70,42 @@ Deno.test("Directory.directory() - invalid name", () => {
   assert(!invalidChild.success);
   assertEquals(invalidChild.error, [{ kind: "CONTAINS_PATH_SEPARATOR" }]);
 });
+
+Deno.test("Directory.exists() - directory exists", async () => {
+  // Create a temporary directory
+  const tempDir = await Deno.makeTempDir();
+
+  const dir = Directory.build(tempDir);
+  assert(dir.success);
+
+  const result = await dir.value.exists();
+  assert(result.success);
+  assertEquals(result.value, true);
+
+  // Cleanup
+  await Deno.remove(tempDir);
+});
+
+Deno.test("Directory.exists() - directory does not exist", async () => {
+  const dir = Directory.build("/this/path/should/not/exist/at/all");
+  assert(dir.success);
+
+  const result = await dir.value.exists();
+  assert(result.success);
+  assertEquals(result.value, false);
+});
+
+Deno.test("Directory.exists() - file exists at path", async () => {
+  // Create a temporary file
+  const tempFile = await Deno.makeTempFile();
+
+  const dir = Directory.build(tempFile);
+  assert(dir.success);
+
+  const result = await dir.value.exists();
+  assert(!result.success);
+  assertEquals(result.error.kind, "FILE_EXISTS");
+
+  // Cleanup
+  await Deno.remove(tempFile);
+});

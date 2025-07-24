@@ -42,6 +42,25 @@ export class Directory extends AbstractPath {
     return ok(new Directory(validatedName.value, this));
   }
 
+  async exists(): Promise<Result<boolean, DirectoryExistsError>> {
+    try {
+      const stat = await Deno.stat(this.fullPath);
+      if (stat.isDirectory) {
+        return ok(true);
+      } else {
+        return err({ kind: "FILE_EXISTS" });
+      }
+    } catch (error) {
+      if (error instanceof Deno.errors.NotFound) {
+        return ok(false);
+      }
+      return err({
+        kind: "IO_ERROR",
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
   static build(path: string): Result<Directory, BuildDirectoryError> {
     if (!path.startsWith("/")) {
       return err({ kind: "NOT_ABSOLUTE_PATH", path });
@@ -102,6 +121,11 @@ type BuildDirectoryError =
   | { kind: "NOT_ABSOLUTE_PATH"; path: string }
   | { kind: "INVALID_TRAILING_SLASH"; path: string }
   | BuildDirectoryPathSegmentError;
+
+type DirectoryExistsError = { kind: "FILE_EXISTS" } | {
+  kind: "IO_ERROR";
+  message: string;
+};
 
 export class File extends AbstractPath {
   readonly kind = PathType.File;
