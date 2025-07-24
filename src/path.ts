@@ -1,7 +1,7 @@
-import { Result, ok } from "@coint/simple";
-import { fileNameValidate, FileNameValidateError } from "./filename.ts";
+import { err, ok, type Result } from "@coint/simple";
+import { fileNameValidate, type FileNameValidateError } from "./filename.ts";
 
-// we will support only POSIX path for now
+// OPT :: we will support only POSIX path for now
 export enum PathType {
   Directory,
   File,
@@ -9,51 +9,81 @@ export enum PathType {
 }
 
 export abstract class AbstractPath {
+  constructor(readonly name: string) {}
+
   abstract kind: PathType;
-
-  name: string;
-
-  constructor(name: string) {
-    this.name = name;
-  }
-
-  static file(name: string): Result<File, FileNameValidateError[]> {
-    const result = fileNameValidate(name);
-    if (!result.success) {
-      return result;
-    }
-    return ok(new File(result.value));
-  }
-
-  static directory(name: string): Result<Directory, FileNameValidateError[]> {
-    const result = fileNameValidate(name);
-    if (!result.success) {
-      return result;
-    }
-    return ok(new Directory(result.value));
-  }
-
-  static symbolickLink(
-    name: string,
-  ): Result<SymbolicLink, FileNameValidateError[]> {
-    const result = fileNameValidate(name);
-    if (!result.success) {
-      return result;
-    }
-    return ok(new SymbolicLink(result.value));
-  }
 }
 
 export class Directory extends AbstractPath {
+  private constructor(name: string, readonly parent: Directory | undefined) {
+    super(name);
+  }
+
   readonly kind = PathType.Directory;
+
+  static build(path: string): Result<Directory, BuildDirectoryError> {
+    if (!path.startsWith("/")) {
+      return err({ kind: "NOT_ABSOLUTE_PATH", path });
+    }
+
+    // Handle root directory case
+    if (path === "/") {
+      return ok(new Directory("", undefined));
+    }
+
+    // Check for trailing slash
+    if (path.endsWith("/")) {
+      return err({ kind: "INVALID_TRAILING_SLASH", path });
+    }
+
+    const [_, ...children] = path.split("/");
+    // TODO :: I can ensure _ is ''(empty string, but How can I force that?)
+    type ReduceType = Result<Directory, BuildDirectoryPathSegmentError>;
+    const reducer = (
+      accumulator: ReduceType,
+      pathSegement: string,
+    ): ReduceType => {
+      const name = fileNameValidate(pathSegement);
+      if (!name.success) {
+        const pathSegmentError: PathSegmentError = [pathSegement, name.error];
+        if (!accumulator.success) {
+          return err({
+            kind: "INVALID_PATH_SEGMENT",
+            pathSegmentErrors: [
+              ...accumulator.error.pathSegmentErrors,
+              pathSegmentError,
+            ],
+          });
+        }
+        return err({
+          kind: "INVALID_PATH_SEGMENT",
+          pathSegmentErrors: [pathSegmentError],
+        });
+      }
+
+      if (!accumulator.success) {
+        return accumulator;
+      }
+
+      return ok(new Directory(name.value, accumulator.value));
+    };
+    return children.reduce(reducer, ok(new Directory("", undefined)));
+  }
 }
+
+type PathSegmentError = [string, FileNameValidateError[]];
+type BuildDirectoryPathSegmentError = {
+  kind: "INVALID_PATH_SEGMENT";
+  pathSegmentErrors: PathSegmentError[];
+};
+
+type BuildDirectoryError =
+  | { kind: "NOT_ABSOLUTE_PATH"; path: string }
+  | { kind: "INVALID_TRAILING_SLASH"; path: string }
+  | BuildDirectoryPathSegmentError;
 
 export class File extends AbstractPath {
   readonly kind = PathType.File;
 }
 
-export class SymbolicLink extends AbstractPath {
-  readonly kind = PathType.SymbolicLink;
-}
-
-export type Path = Directory | File | SymbolicLink;
+export type Path = Directory | File;

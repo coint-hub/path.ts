@@ -59,7 +59,7 @@
  * );
  * ```
  */
-import { err, ok, Result } from "@coint/simple";
+import { err, ok, type Result } from "@coint/simple";
 
 export function fileNameValidate(name: string): FileNameValidationResult {
   const errors: FileNameValidateError[] = [];
