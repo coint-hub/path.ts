@@ -1,6 +1,6 @@
 import { assert, assertEquals } from "@std/assert";
 import { AbstractPath, Directory, File, SymbolicLink } from "./path.ts";
-import { ok } from "./result.ts";
+import { ok } from "@coint/simple";
 
 Deno.test("Path.file()", () => {
   const result = AbstractPath.file("valid.txt");

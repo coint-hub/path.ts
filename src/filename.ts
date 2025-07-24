@@ -19,7 +19,7 @@
  * ```ts
  * import { assertEquals } from "@std/assert";
  * import { fileNameValidate } from "./filename.ts";
- * import { Result, ok, err } from "./result.ts";
+ * import { Result, ok, err } from "@coint/simple";
  *
  * assertEquals(
  *   fileNameValidate("document.txt"),
@@ -31,7 +31,7 @@
  * ```ts
  * import { assertEquals } from "@std/assert";
  * import { fileNameValidate, type FileNameValidateError } from "./filename.ts";
- * import { Result, ok, err } from "./result.ts";
+ * import { Result, ok, err } from "@coint/simple";
  *
  * assertEquals(
  *   fileNameValidate('file:name.txt'),
@@ -47,7 +47,7 @@
  * ```ts
  * import { assertEquals } from "@std/assert";
  * import { fileNameValidate, type FileNameValidateError } from "./filename.ts";
- * import { Result, ok, err } from "./result.ts";
+ * import { Result, ok, err } from "@coint/simple";
  *
  * const longName = "a".repeat(256);
  * assertEquals(
@@ -59,7 +59,7 @@
  * );
  * ```
  */
-import { err, ok, Result } from "./result.ts";
+import { err, ok, Result } from "@coint/simple";
 
 export function fileNameValidate(name: string): FileNameValidationResult {
   const errors: FileNameValidateError[] = [];

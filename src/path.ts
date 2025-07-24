@@ -1,4 +1,4 @@
-import { Result, ok } from "./result.ts";
+import { Result, ok } from "@coint/simple";
 import { fileNameValidate, FileNameValidateError } from "./filename.ts";
 
 // we will support only POSIX path for now

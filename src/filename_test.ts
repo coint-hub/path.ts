@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { fileNameValidate } from "./filename.ts";
-import { err, ok } from "./result.ts";
+import { err, ok } from "@coint/simple";
 import { FileNameValidateError } from "../mod.ts";
 
 Deno.test("validate - empty name", () => {
