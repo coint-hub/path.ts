@@ -1,4 +1,7 @@
 {
+  "name": "@coint/path",
+  "version": "0.1.0",
+  "license": "MIT",
   "tasks": {
     "doctest": "deno test --doc",
     "check": "deno lint && deno test && deno test --doc"
