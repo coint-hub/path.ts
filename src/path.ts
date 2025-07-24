@@ -21,6 +21,18 @@ export class Directory extends AbstractPath {
 
   readonly kind = PathType.Directory;
 
+  get fullPath(): string {
+    const parentFullPath = this.parent?.fullPath;
+    if (parentFullPath === undefined) {
+      // this is root
+      return "/";
+    }
+
+    // OPT :: extract joiner
+    const joiner = parentFullPath.endsWith("/") ? "" : "/";
+    return parentFullPath + joiner + this.name;
+  }
+
   static build(path: string): Result<Directory, BuildDirectoryError> {
     if (!path.startsWith("/")) {
       return err({ kind: "NOT_ABSOLUTE_PATH", path });
