@@ -18,44 +18,51 @@
  * @example Valid name
  * ```ts
  * import { assertEquals } from "@std/assert";
- * import { validate } from "./filename.ts";
+ * import { fileNameValidate } from "./filename.ts";
+ * import { Result } from "@result/result";
  *
- * const result = validate("document.txt");
- * assertEquals(result.isOk(), true);
- * assertEquals(result.unwrap(), "document.txt");
+ * assertEquals(
+ *   fileNameValidate("document.txt"),
+ *   Result.ok("document.txt")
+ * );
  * ```
  *
  * @example Invalid name with Windows characters
  * ```ts
  * import { assertEquals } from "@std/assert";
- * import { validate, type ValidateError } from "./filename.ts";
+ * import { fileNameValidate, type FileNameValidateError } from "./filename.ts";
+ * import { Result } from "@result/result";
  *
- * const result = validate('file:name.txt');
- * assertEquals(result.isErr(), true);
- * const errors = result.unwrapErr();
- * assertEquals(errors[0].kind, 'INVALID_CHAR');
- * const invalidCharError = errors[0] as Extract<ValidateError, { kind: "INVALID_CHAR" }>;
- * assertEquals(invalidCharError.chars, [':']);
+ * assertEquals(
+ *   fileNameValidate('file:name.txt'),
+ *   Result.err<FileNameValidateError[]>([{
+ *     kind: 'INVALID_CHAR',
+ *     chars: [':'],
+ *     filesystem: 'FAT32/exFAT/NTFS'
+ *   }])
+ * );
  * ```
  *
  * @example Name too long
  * ```ts
  * import { assertEquals } from "@std/assert";
- * import { validate } from "./filename.ts";
+ * import { fileNameValidate, type FileNameValidateError } from "./filename.ts";
+ * import { Result } from "@result/result";
  *
  * const longName = "a".repeat(256);
- * const result = validate(longName);
- * assertEquals(result.isErr(), true);
- * const errors = result.unwrapErr();
- * assertEquals(errors.length, 2); // Character limit and UTF-8 byte limit
- * assertEquals(errors[0].kind, 'TOO_LONG');
- * assertEquals(errors[1].kind, 'UTF8_TOO_LONG');
+ * assertEquals(
+ *   fileNameValidate(longName),
+ *   Result.err<FileNameValidateError[]>([
+ *     { kind: 'TOO_LONG', max: 255, actual: 256 },
+ *     { kind: 'UTF8_TOO_LONG', max: 255, actual: 256 }
+ *   ])
+ * );
  * ```
  */
 import { Result } from "@result/result";
 
-export function validate(name: string): ValidationResult {
-  const errors: ValidateError[] = [];
+export function fileNameValidate(name: string): FileNameValidationResult {
+  const errors: FileNameValidateError[] = [];
 
   // Check for empty name
   if (name.length === 0) {
@@ -115,7 +122,7 @@ export function validate(name: string): ValidationResult {
   return errors.length === 0 ? Result.ok(name) : Result.err(errors);
 }
 
-export type ValidateError =
+export type FileNameValidateError =
   | { kind: "TOO_LONG"; max: number; actual: number }
   | { kind: "EMPTY" }
   | { kind: "RESERVED"; name: string }
@@ -125,4 +132,4 @@ export type ValidateError =
   | { kind: "CONTROL_CHAR"; code: number }
   | { kind: "UTF8_TOO_LONG"; max: number; actual: number };
 
-export type ValidationResult = Result<string, ValidateError[]>;
+export type FileNameValidationResult = Result<string, FileNameValidateError[]>;
