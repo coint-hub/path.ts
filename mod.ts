@@ -1,1 +1,1 @@
-export { validate } from "./filename.ts";
+export { validate } from "./src/filename.ts";

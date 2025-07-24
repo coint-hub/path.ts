@@ -1,6 +1,7 @@
 {
   "tasks": {
-    "doctest": "deno test --doc"
+    "doctest": "deno test --doc",
+    "check": "deno lint && deno test && deno test --doc"
   },
   "imports": {
     "@result/result": "jsr:@result/result@^1.1.1",
