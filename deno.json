@@ -4,7 +4,7 @@
   "license": "MIT",
   "tasks": {
     "doctest": "deno test --doc",
-    "check": "deno lint && deno test && deno test --doc"
+    "verify": "deno lint && deno test && deno test --doc"
   },
   "imports": {
     "@coint/simple": "jsr:@coint/simple@^0.1.0",
