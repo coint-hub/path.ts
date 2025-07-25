@@ -68,9 +68,58 @@ Current modules:
 
 - assertEquals support deep equals
 
+## Result Type Handling
+
+When working with Result types in this codebase, you MUST handle all possible cases exhaustively:
+
+### Basic Pattern
+```typescript
+const result = someFunction();
+if (result.success) {
+  // Handle success case - use result.value
+} else {
+  // Handle error case - use result.error
+}
+```
+
+### Error Handling with Switch
+When a Result has multiple error types, use a switch statement to handle each case:
+
+```typescript
+const result = await dir.mkdir();
+if (result.success) {
+  if (result.value) {
+    // Directory was created
+  } else {
+    // Directory already existed
+  }
+} else {
+  // Handle all error cases exhaustively
+  switch (result.error.kind) {
+    case "FILE_EXISTS":
+      // A file exists at this path
+      break;
+    case "PERMISSION_DENIED":
+      // No permission to create
+      break;
+    case "PARENT_NOT_FOUND":
+      // Parent directory doesn't exist
+      break;
+    case "IO_ERROR":
+      // General I/O error with message
+      console.error(result.error.message);
+      break;
+  }
+}
+```
+
+### Important Rules
+- NEVER ignore error cases - always handle them explicitly
+- When adding new error types, ensure all switch statements are updated
+- Use TypeScript's exhaustiveness checking to ensure all cases are handled
+- Forward errors when appropriate (e.g., in higher-level functions)
+- Document all possible error types in JSDoc comments
+
 ## Development Workflow
 
 - Do not try to git add, I will stage for you
-
-```
-```
