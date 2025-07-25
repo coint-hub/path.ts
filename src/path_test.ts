@@ -166,3 +166,86 @@ Deno.test("Directory.mkdir() - parent not found", async () => {
   assert(!result.success);
   assertEquals(result.error.kind, "PARENT_NOT_FOUND");
 });
+
+Deno.test("Directory.mkdirp() - creates nested directories", async () => {
+  const tempDir = await Deno.makeTempDir();
+  const nestedPath = `${tempDir}/a/b/c/d`;
+  const dir = Directory.build(nestedPath);
+  assert(dir.success);
+  
+  const result = await dir.value.mkdirp();
+  assert(result.success);
+  assertEquals(result.value, true); // Created
+  
+  // Verify all directories were created
+  const stat = await Deno.stat(nestedPath);
+  assert(stat.isDirectory);
+  
+  // Cleanup
+  await Deno.remove(tempDir, { recursive: true });
+});
+
+Deno.test("Directory.mkdirp() - directory already exists", async () => {
+  const tempDir = await Deno.makeTempDir();
+  const dir = Directory.build(tempDir);
+  assert(dir.success);
+  
+  const result = await dir.value.mkdirp();
+  assert(result.success);
+  assertEquals(result.value, false); // Already exists
+  
+  // Cleanup
+  await Deno.remove(tempDir);
+});
+
+Deno.test("Directory.mkdirp() - partial path exists", async () => {
+  const tempDir = await Deno.makeTempDir();
+  const parentPath = `${tempDir}/parent`;
+  await Deno.mkdir(parentPath);
+  
+  const nestedPath = `${parentPath}/child/grandchild`;
+  const dir = Directory.build(nestedPath);
+  assert(dir.success);
+  
+  const result = await dir.value.mkdirp();
+  assert(result.success);
+  assertEquals(result.value, true); // Created new directories
+  
+  // Verify all directories exist
+  const stat = await Deno.stat(nestedPath);
+  assert(stat.isDirectory);
+  
+  // Cleanup
+  await Deno.remove(tempDir, { recursive: true });
+});
+
+Deno.test("Directory.mkdirp() - file exists in path", async () => {
+  const tempDir = await Deno.makeTempDir();
+  const filePath = `${tempDir}/file.txt`;
+  await Deno.writeTextFile(filePath, "content");
+  
+  // Try to create directory where file exists
+  const dirPath = `${filePath}/subdir`;
+  const dir = Directory.build(dirPath);
+  assert(dir.success);
+  
+  const result = await dir.value.mkdirp();
+  assert(!result.success);
+  assertEquals(result.error.kind, "FILE_EXISTS");
+  
+  // Cleanup
+  await Deno.remove(tempDir, { recursive: true });
+});
+
+Deno.test("Directory.mkdirp() - file exists at target path", async () => {
+  const tempFile = await Deno.makeTempFile();
+  const dir = Directory.build(tempFile);
+  assert(dir.success);
+  
+  const result = await dir.value.mkdirp();
+  assert(!result.success);
+  assertEquals(result.error.kind, "FILE_EXISTS");
+  
+  // Cleanup
+  await Deno.remove(tempFile);
+});

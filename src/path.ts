@@ -54,9 +54,17 @@ export class Directory extends AbstractPath {
       if (error instanceof Deno.errors.NotFound) {
         return ok(false);
       }
+      // Check if error message indicates path goes through a non-directory
+      const errorMessage = error instanceof Error
+        ? error.message
+        : String(error);
+      if (errorMessage.includes("Not a directory")) {
+        // This means a parent in the path is a file, not a directory
+        return err({ kind: "FILE_EXISTS" });
+      }
       return err({
         kind: "IO_ERROR",
-        message: error instanceof Error ? error.message : String(error),
+        message: errorMessage,
       });
     }
   }
@@ -103,6 +111,39 @@ export class Directory extends AbstractPath {
           message: error instanceof Error ? error.message : String(error),
         });
       }
+    }
+  }
+
+  async mkdirp(): Promise<Result<boolean, MkdirpError>> {
+    if (this.parent) {
+      const parentResult = await this.parent.mkdirp();
+      if (!parentResult.success) {
+        return err(parentResult.error);
+      }
+    }
+
+    const mkdirResult = await this.mkdir();
+    if (!mkdirResult.success) {
+      switch (mkdirResult.error.kind) {
+        case "FILE_EXISTS": {
+          return err({ kind: "FILE_EXISTS" });
+        }
+        case "PERMISSION_DENIED": {
+          return err({ kind: "PERMISSION_DENIED" });
+        }
+        case "PARENT_NOT_FOUND": {
+          // This shouldn't happen since we created parents, but handle as IO_ERROR
+          return err({
+            kind: "IO_ERROR",
+            message: `Unexpected PARENT_NOT_FOUND after creating parents`,
+          });
+        }
+        case "IO_ERROR": {
+          return err(mkdirResult.error);
+        }
+      }
+    } else {
+      return ok(mkdirResult.value);
     }
   }
 
@@ -176,6 +217,11 @@ type MkdirError =
   | { kind: "FILE_EXISTS" }
   | { kind: "PERMISSION_DENIED" }
   | { kind: "PARENT_NOT_FOUND" }
+  | { kind: "IO_ERROR"; message: string };
+
+type MkdirpError =
+  | { kind: "FILE_EXISTS" }
+  | { kind: "PERMISSION_DENIED" }
   | { kind: "IO_ERROR"; message: string };
 
 export class File extends AbstractPath {
