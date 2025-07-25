@@ -109,3 +109,60 @@ Deno.test("Directory.exists() - file exists at path", async () => {
   // Cleanup
   await Deno.remove(tempFile);
 });
+
+Deno.test("Directory.mkdir() - creates new directory", async () => {
+  const tempDir = await Deno.makeTempDir();
+  const parentDir = Directory.build(tempDir);
+  assert(parentDir.success);
+  
+  const newDirResult = parentDir.value.directory("test-dir");
+  assert(newDirResult.success);
+  
+  const result = await newDirResult.value.mkdir();
+  assert(result.success);
+  assertEquals(result.value, true); // Created
+  
+  // Verify it was created
+  const stat = await Deno.stat(newDirResult.value.fullPath);
+  assert(stat.isDirectory);
+  
+  // Cleanup
+  await Deno.remove(tempDir, { recursive: true });
+});
+
+Deno.test("Directory.mkdir() - directory already exists", async () => {
+  const tempDir = await Deno.makeTempDir();
+  const dir = Directory.build(tempDir);
+  assert(dir.success);
+  
+  const result = await dir.value.mkdir();
+  assert(result.success);
+  assertEquals(result.value, false); // Already exists
+  
+  // Cleanup
+  await Deno.remove(tempDir);
+});
+
+Deno.test("Directory.mkdir() - file exists at path", async () => {
+  const tempFile = await Deno.makeTempFile();
+  
+  const dir = Directory.build(tempFile);
+  assert(dir.success);
+  
+  const result = await dir.value.mkdir();
+  assert(!result.success);
+  assertEquals(result.error.kind, "FILE_EXISTS");
+  
+  // Cleanup
+  await Deno.remove(tempFile);
+});
+
+Deno.test("Directory.mkdir() - parent not found", async () => {
+  const nonExistentParent = "/this/parent/does/not/exist";
+  const dir = Directory.build(nonExistentParent + "/child");
+  assert(dir.success);
+  
+  const result = await dir.value.mkdir();
+  assert(!result.success);
+  assertEquals(result.error.kind, "PARENT_NOT_FOUND");
+});

@@ -61,6 +61,51 @@ export class Directory extends AbstractPath {
     }
   }
 
+  async mkdir(): Promise<Result<boolean, MkdirError>> {
+    try {
+      await Deno.mkdir(this.fullPath);
+      return ok(true);
+    } catch (error) {
+      if (error instanceof Deno.errors.AlreadyExists) {
+        // Verify what type of entity already exists
+        const existsResult = await this.exists();
+        if (existsResult.success) {
+          // Directory already exists
+          if (existsResult.value) {
+            return ok(false);
+          } else {
+            // Race condition: AlreadyExists error but directory doesn't exist now
+            // This can happen in concurrent scenarios
+            return err({
+              kind: "IO_ERROR",
+              message:
+                `Filesystem reported AlreadyExists, but directory not found. Original error: ${error.message}`,
+            });
+          }
+        } else {
+          // Forward errors from exists() check
+          switch (existsResult.error.kind) {
+            case "FILE_EXISTS": {
+              return err({ kind: "FILE_EXISTS" });
+            }
+            case "IO_ERROR": {
+              return err(existsResult.error);
+            }
+          }
+        }
+      } else if (error instanceof Deno.errors.PermissionDenied) {
+        return err({ kind: "PERMISSION_DENIED" });
+      } else if (error instanceof Deno.errors.NotFound) {
+        return err({ kind: "PARENT_NOT_FOUND" });
+      } else {
+        return err({
+          kind: "IO_ERROR",
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+  }
+
   static build(path: string): Result<Directory, BuildDirectoryError> {
     if (!path.startsWith("/")) {
       return err({ kind: "NOT_ABSOLUTE_PATH", path });
@@ -126,6 +171,12 @@ type DirectoryExistsError = { kind: "FILE_EXISTS" } | {
   kind: "IO_ERROR";
   message: string;
 };
+
+type MkdirError =
+  | { kind: "FILE_EXISTS" }
+  | { kind: "PERMISSION_DENIED" }
+  | { kind: "PARENT_NOT_FOUND" }
+  | { kind: "IO_ERROR"; message: string };
 
 export class File extends AbstractPath {
   readonly kind = PathType.File;
