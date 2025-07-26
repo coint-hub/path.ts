@@ -130,6 +130,25 @@ if (result.success) {
 - Forward errors when appropriate (e.g., in higher-level functions)
 - Document all possible error types in JSDoc comments
 
+### Exhaustive Case Handling
+When handling error types in switch statements, use `ExhaustiveCaseError` from `@coint/simple` to ensure all cases are covered:
+
+```typescript ignore
+switch (result.error.kind) {
+  case "FILE_EXISTS": {
+    return err({ kind: "FILE_EXISTS" });
+  }
+  case "IO_ERROR": {
+    return err(result.error);
+  }
+  default: {
+    throw new ExhaustiveCaseError(result.error);
+  }
+}
+```
+
+This pattern ensures that if a new error type is added to the union, TypeScript will catch any switch statements that don't handle it. The `ExhaustiveCaseError` will never be thrown at runtime if all cases are handled properly - it's a compile-time safety check.
+
 ## Development Workflow
 
 - Do not try to git add, I will stage for you
