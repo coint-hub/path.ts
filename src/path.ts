@@ -1,4 +1,4 @@
-import { err, ok, type Result } from "@coint/simple";
+import { err, ExhaustiveCaseError, ok, type Result } from "@coint/simple";
 import { fileNameValidate, type FileNameValidateError } from "./filename.ts";
 
 // OPT :: we will support only POSIX path for now
@@ -99,6 +99,9 @@ export class Directory extends AbstractPath {
             case "IO_ERROR": {
               return err(existsResult.error);
             }
+            default: {
+              throw new ExhaustiveCaseError(existsResult.error);
+            }
           }
         }
       } else if (error instanceof Deno.errors.PermissionDenied) {
@@ -140,6 +143,9 @@ export class Directory extends AbstractPath {
         }
         case "IO_ERROR": {
           return err(mkdirResult.error);
+        }
+        default: {
+          throw new ExhaustiveCaseError(mkdirResult.error);
         }
       }
     } else {

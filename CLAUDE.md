@@ -40,7 +40,13 @@ Current modules:
 
 - `filename.ts` - Validates filenames/directory names across multiple
   filesystems (FAT32, exFAT, NTFS, APFS, ext2/3/4, XFS)
+- `path.ts` - Core path management with Directory and File classes
 - `mod.ts` - Main export file
+
+### Key Implementation Patterns
+
+- `mkdirp()`: Simple recursive pattern - ensure parent exists first, then create self
+- Error handling: Check for "Not a directory" in error messages to detect file-in-path scenarios
 
 ## Code Standards
 
@@ -49,6 +55,10 @@ Current modules:
 - Validation functions return error arrays (empty array = valid)
 - Reference external sources (e.g., Wikipedia for filesystem limits) in comments
   and JSDoc
+- Use consistent formatting for ternary operators - split across multiple lines for readability
+- In switch statements, use braces for all case blocks: `case "FOO": { ... }`
+- Keep error messages concise and avoid JSON.stringify for error objects
+- Structure if/else blocks to handle the error cases first, success case last
 
 ## Commit Message Guidelines
 
@@ -73,7 +83,7 @@ Current modules:
 When working with Result types in this codebase, you MUST handle all possible cases exhaustively:
 
 ### Basic Pattern
-```typescript
+```typescript ignore
 const result = someFunction();
 if (result.success) {
   // Handle success case - use result.value
@@ -85,7 +95,7 @@ if (result.success) {
 ### Error Handling with Switch
 When a Result has multiple error types, use a switch statement to handle each case:
 
-```typescript
+```typescript ignore
 const result = await dir.mkdir();
 if (result.success) {
   if (result.value) {

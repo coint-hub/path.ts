@@ -1,13 +1,13 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@coint/simple@0.1": "0.1.0",
+    "jsr:@coint/simple@1": "1.0.1",
     "jsr:@std/assert@1": "1.0.13",
     "jsr:@std/internal@^1.0.6": "1.0.9"
   },
   "jsr": {
-    "@coint/simple@0.1.0": {
-      "integrity": "e1df347561160cc8c89efdd60805708e6f09364638b3e42151a5b89ceb2e70c9"
+    "@coint/simple@1.0.1": {
+      "integrity": "d076a4c862c628bdc8d319dd58b8cb36c8d0be9f3327fc379143abd45b97b605"
     },
     "@std/assert@1.0.13": {
       "integrity": "ae0d31e41919b12c656c742b22522c32fb26ed0cba32975cb0de2a273cb68b29",
@@ -21,7 +21,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@coint/simple@0.1",
+      "jsr:@coint/simple@1",
       "jsr:@std/assert@1"
     ]
   }

@@ -6,8 +6,11 @@
     "doctest": "deno test --doc",
     "verify": "deno lint && deno test --allow-read --allow-write && deno test --doc --allow-read --allow-write"
   },
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": true
+  },
   "imports": {
-    "@coint/simple": "jsr:@coint/simple@^0.1.0",
+    "@coint/simple": "jsr:@coint/simple@^1.0.0",
     "@std/assert": "jsr:@std/assert@1"
   },
   "exports": { ".": "./mod.ts" }
