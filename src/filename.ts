@@ -59,7 +59,7 @@
  * );
  * ```
  */
-import { err, ok, type Result } from "@coint/simple";
+import { err, ExhaustiveCaseError, ok, type Result } from "@coint/simple";
 
 export function fileNameValidate(name: string): FileNameValidationResult {
   const errors: FileNameValidateError[] = [];
@@ -137,3 +137,44 @@ export type FileNameValidateError =
   | { kind: "UTF8_TOO_LONG"; max: number; actual: number };
 
 export type FileNameValidationResult = Result<string, FileNameValidateError[]>;
+
+export function fileNameValidationErrorToString(
+  error: FileNameValidateError,
+): string {
+  switch (error.kind) {
+    case "TOO_LONG": {
+      return `Name too long (${error.actual} characters, max ${error.max})`;
+    }
+    case "EMPTY": {
+      return "Name cannot be empty";
+    }
+    case "RESERVED": {
+      return `"${error.name}" is a reserved name`;
+    }
+    case "CONTAINS_PATH_SEPARATOR": {
+      return "Name cannot contain path separator (/)";
+    }
+    case "CONTAINS_NULL": {
+      return "Name cannot contain null character";
+    }
+    case "INVALID_CHAR": {
+      const chars = error.chars.map(c => `"${c}"`).join(", ");
+      return `Invalid characters for ${error.filesystem}: ${chars}`;
+    }
+    case "CONTROL_CHAR": {
+      return `Name contains control character (0x${error.code.toString(16).padStart(2, "0")})`;
+    }
+    case "UTF8_TOO_LONG": {
+      return `Name too long in UTF-8 (${error.actual} bytes, max ${error.max})`;
+    }
+    default: {
+      throw new ExhaustiveCaseError(error);
+    }
+  }
+}
+
+export function fileNameValidationErrorsToString(
+  errors: FileNameValidateError[],
+): string[] {
+  return errors.map(fileNameValidationErrorToString);
+}
