@@ -46,6 +46,10 @@ export class Directory extends AbstractPath {
     return ok(new Directory(validatedName.value, this));
   }
 
+  file(name: string): Result<File, FileNameValidateError[]> {
+    return File.build(name, this);
+  }
+
   async exists(): Promise<Result<boolean, DirectoryExistsError>> {
     try {
       const stat = await Deno.stat(this.fullPath);
@@ -235,8 +239,82 @@ type MkdirpError =
   | { kind: "IO_ERROR"; message: string };
 
 export class File extends AbstractPath {
+  private constructor(name: string, readonly parent: Directory) {
+    super(name);
+  }
+
   readonly kind = PathType.File;
+
+  get fullPath(): string {
+    const parentFullPath = this.parent.fullPath;
+    const joiner = parentFullPath.endsWith("/") ? "" : "/";
+    return parentFullPath + joiner + this.name;
+  }
+
+  static build(
+    name: string,
+    parent: Directory,
+  ): Result<File, FileNameValidateError[]> {
+    const nameResult = fileNameValidate(name);
+    if (!nameResult.success) {
+      return err(nameResult.error);
+    }
+
+    return ok(new File(name, parent));
+  }
+
+  async read(): Promise<Result<string, FileReadError>> {
+    try {
+      const content = await Deno.readTextFile(this.fullPath);
+      return ok(content);
+    } catch (error) {
+      if (error instanceof Deno.errors.NotFound) {
+        return err({ kind: "FILE_NOT_FOUND" });
+      } else if (error instanceof Deno.errors.PermissionDenied) {
+        return err({ kind: "PERMISSION_DENIED" });
+      } else if (error instanceof Deno.errors.IsADirectory) {
+        return err({ kind: "IS_DIRECTORY" });
+      } else {
+        return err({
+          kind: "IO_ERROR",
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+  }
+
+  async write(text: string): Promise<Result<void, FileWriteError>> {
+    try {
+      await Deno.writeTextFile(this.fullPath, text);
+      return ok(undefined);
+    } catch (error) {
+      if (error instanceof Deno.errors.PermissionDenied) {
+        return err({ kind: "PERMISSION_DENIED" });
+      } else if (error instanceof Deno.errors.IsADirectory) {
+        return err({ kind: "IS_DIRECTORY" });
+      } else if (error instanceof Deno.errors.NotFound) {
+        return err({ kind: "PARENT_NOT_FOUND" });
+      } else {
+        return err({
+          kind: "IO_ERROR",
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+  }
 }
+
+export type FileReadError = 
+  | { kind: "FILE_NOT_FOUND" }
+  | { kind: "PERMISSION_DENIED" }
+  | { kind: "IS_DIRECTORY" }
+  | { kind: "IO_ERROR"; message: string };
+
+export type FileWriteError = 
+  | { kind: "PERMISSION_DENIED" }
+  | { kind: "IS_DIRECTORY" }
+  | { kind: "PARENT_NOT_FOUND" }
+  | { kind: "IO_ERROR"; message: string };
 
 export type Path = Directory | File;
 
@@ -309,6 +387,46 @@ export function buildDirectoryErrorToString(
         return `"${segment}": ${message}`;
       });
       return `Invalid path segments: ${segments.join("; ")}`;
+    }
+    default: {
+      throw new ExhaustiveCaseError(error);
+    }
+  }
+}
+
+export function fileReadErrorToString(error: FileReadError): string {
+  switch (error.kind) {
+    case "FILE_NOT_FOUND": {
+      return "File not found";
+    }
+    case "PERMISSION_DENIED": {
+      return "Permission denied to read file";
+    }
+    case "IS_DIRECTORY": {
+      return "Cannot read directory as file";
+    }
+    case "IO_ERROR": {
+      return `I/O error: ${error.message}`;
+    }
+    default: {
+      throw new ExhaustiveCaseError(error);
+    }
+  }
+}
+
+export function fileWriteErrorToString(error: FileWriteError): string {
+  switch (error.kind) {
+    case "PERMISSION_DENIED": {
+      return "Permission denied to write file";
+    }
+    case "IS_DIRECTORY": {
+      return "Cannot write to directory";
+    }
+    case "PARENT_NOT_FOUND": {
+      return "Parent directory does not exist";
+    }
+    case "IO_ERROR": {
+      return `I/O error: ${error.message}`;
     }
     default: {
       throw new ExhaustiveCaseError(error);
