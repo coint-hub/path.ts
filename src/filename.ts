@@ -158,11 +158,13 @@ export function fileNameValidationErrorToString(
       return "Name cannot contain null character";
     }
     case "INVALID_CHAR": {
-      const chars = error.chars.map(c => `"${c}"`).join(", ");
+      const chars = error.chars.map((c) => `"${c}"`).join(", ");
       return `Invalid characters for ${error.filesystem}: ${chars}`;
     }
     case "CONTROL_CHAR": {
-      return `Name contains control character (0x${error.code.toString(16).padStart(2, "0")})`;
+      return `Name contains control character (0x${
+        error.code.toString(16).padStart(2, "0")
+      })`;
     }
     case "UTF8_TOO_LONG": {
       return `Name too long in UTF-8 (${error.actual} bytes, max ${error.max})`;
@@ -173,7 +175,7 @@ export function fileNameValidationErrorToString(
   }
 }
 
-export function fileNameValidationErrorsToString(
+export function fileNameValidationErrorsToStrings(
   errors: FileNameValidateError[],
 ): string[] {
   return errors.map(fileNameValidationErrorToString);
