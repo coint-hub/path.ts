@@ -1,5 +1,9 @@
 import { err, ExhaustiveCaseError, ok, type Result } from "@coint/simple";
-import { fileNameValidate, type FileNameValidateError } from "./filename.ts";
+import {
+  fileNameValidate,
+  type FileNameValidateError,
+  fileNameValidationErrorsToStrings,
+} from "./filename.ts";
 
 // OPT :: we will support only POSIX path for now
 export enum PathType {
@@ -235,3 +239,79 @@ export class File extends AbstractPath {
 }
 
 export type Path = Directory | File;
+
+export function directoryExistsErrorToString(
+  error: DirectoryExistsError,
+): string {
+  switch (error.kind) {
+    case "FILE_EXISTS": {
+      return "A file already exists at this path";
+    }
+    case "IO_ERROR": {
+      return `I/O error: ${error.message}`;
+    }
+    default: {
+      throw new ExhaustiveCaseError(error);
+    }
+  }
+}
+
+export function mkdirErrorToString(error: MkdirError): string {
+  switch (error.kind) {
+    case "FILE_EXISTS": {
+      return "A file already exists at this path";
+    }
+    case "PERMISSION_DENIED": {
+      return "Permission denied to create directory";
+    }
+    case "PARENT_NOT_FOUND": {
+      return "Parent directory does not exist";
+    }
+    case "IO_ERROR": {
+      return `I/O error: ${error.message}`;
+    }
+    default: {
+      throw new ExhaustiveCaseError(error);
+    }
+  }
+}
+
+export function mkdirpErrorToString(error: MkdirpError): string {
+  switch (error.kind) {
+    case "FILE_EXISTS": {
+      return "A file already exists in the path";
+    }
+    case "PERMISSION_DENIED": {
+      return "Permission denied to create directory";
+    }
+    case "IO_ERROR": {
+      return `I/O error: ${error.message}`;
+    }
+    default: {
+      throw new ExhaustiveCaseError(error);
+    }
+  }
+}
+
+export function buildDirectoryErrorToString(
+  error: BuildDirectoryError,
+): string {
+  switch (error.kind) {
+    case "NOT_ABSOLUTE_PATH": {
+      return `Path must be absolute: "${error.path}"`;
+    }
+    case "INVALID_TRAILING_SLASH": {
+      return `Path cannot end with trailing slash: "${error.path}"`;
+    }
+    case "INVALID_PATH_SEGMENT": {
+      const segments = error.pathSegmentErrors.map(([segment, errors]) => {
+        const message = fileNameValidationErrorsToStrings(errors).join(", ");
+        return `"${segment}": ${message}`;
+      });
+      return `Invalid path segments: ${segments.join("; ")}`;
+    }
+    default: {
+      throw new ExhaustiveCaseError(error);
+    }
+  }
+}
