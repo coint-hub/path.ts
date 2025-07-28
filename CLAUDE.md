@@ -45,8 +45,10 @@ Current modules:
 
 ### Key Implementation Patterns
 
-- `mkdirp()`: Simple recursive pattern - ensure parent exists first, then create self
-- Error handling: Check for "Not a directory" in error messages to detect file-in-path scenarios
+- `mkdirp()`: Simple recursive pattern - ensure parent exists first, then create
+  self
+- Error handling: Check for "Not a directory" in error messages to detect
+  file-in-path scenarios
 
 ## Code Standards
 
@@ -55,7 +57,8 @@ Current modules:
 - Validation functions return error arrays (empty array = valid)
 - Reference external sources (e.g., Wikipedia for filesystem limits) in comments
   and JSDoc
-- Use consistent formatting for ternary operators - split across multiple lines for readability
+- Use consistent formatting for ternary operators - split across multiple lines
+  for readability
 - In switch statements, use braces for all case blocks: `case "FOO": { ... }`
 - Keep error messages concise and avoid JSON.stringify for error objects
 - Structure if/else blocks to handle the error cases first, success case last
@@ -80,9 +83,11 @@ Current modules:
 
 ## Result Type Handling
 
-When working with Result types in this codebase, you MUST handle all possible cases exhaustively:
+When working with Result types in this codebase, you MUST handle all possible
+cases exhaustively:
 
 ### Basic Pattern
+
 ```typescript ignore
 const result = someFunction();
 if (result.success) {
@@ -93,7 +98,9 @@ if (result.success) {
 ```
 
 ### Error Handling with Switch
-When a Result has multiple error types, use a switch statement to handle each case:
+
+When a Result has multiple error types, use a switch statement to handle each
+case:
 
 ```typescript ignore
 const result = await dir.mkdir();
@@ -124,6 +131,7 @@ if (result.success) {
 ```
 
 ### Important Rules
+
 - NEVER ignore error cases - always handle them explicitly
 - When adding new error types, ensure all switch statements are updated
 - Use TypeScript's exhaustiveness checking to ensure all cases are handled
@@ -131,7 +139,9 @@ if (result.success) {
 - Document all possible error types in JSDoc comments
 
 ### Exhaustive Case Handling
-When handling error types in switch statements, use `ExhaustiveCaseError` from `@coint/simple` to ensure all cases are covered:
+
+When handling error types in switch statements, use `ExhaustiveCaseError` from
+`@coint/simple` to ensure all cases are covered:
 
 ```typescript ignore
 switch (result.error.kind) {
@@ -147,7 +157,10 @@ switch (result.error.kind) {
 }
 ```
 
-This pattern ensures that if a new error type is added to the union, TypeScript will catch any switch statements that don't handle it. The `ExhaustiveCaseError` will never be thrown at runtime if all cases are handled properly - it's a compile-time safety check.
+This pattern ensures that if a new error type is added to the union, TypeScript
+will catch any switch statements that don't handle it. The `ExhaustiveCaseError`
+will never be thrown at runtime if all cases are handled properly - it's a
+compile-time safety check.
 
 ## Development Workflow
 

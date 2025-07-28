@@ -302,18 +302,41 @@ export class File extends AbstractPath {
       }
     }
   }
+
+  async exists(): Promise<Result<boolean, FileExistsError>> {
+    try {
+      const stat = await Deno.stat(this.fullPath);
+      if (stat.isFile) {
+        return ok(true);
+      } else {
+        return err({ kind: "NOT_FILE" });
+      }
+    } catch (error) {
+      if (error instanceof Deno.errors.NotFound) {
+        return ok(false);
+      }
+      return err({
+        kind: "IO_ERROR",
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
 }
 
-export type FileReadError = 
+export type FileReadError =
   | { kind: "FILE_NOT_FOUND" }
   | { kind: "PERMISSION_DENIED" }
   | { kind: "IS_DIRECTORY" }
   | { kind: "IO_ERROR"; message: string };
 
-export type FileWriteError = 
+export type FileWriteError =
   | { kind: "PERMISSION_DENIED" }
   | { kind: "IS_DIRECTORY" }
   | { kind: "PARENT_NOT_FOUND" }
+  | { kind: "IO_ERROR"; message: string };
+
+export type FileExistsError =
+  | { kind: "NOT_FILE" }
   | { kind: "IO_ERROR"; message: string };
 
 export type Path = Directory | File;
@@ -424,6 +447,20 @@ export function fileWriteErrorToString(error: FileWriteError): string {
     }
     case "PARENT_NOT_FOUND": {
       return "Parent directory does not exist";
+    }
+    case "IO_ERROR": {
+      return `I/O error: ${error.message}`;
+    }
+    default: {
+      throw new ExhaustiveCaseError(error);
+    }
+  }
+}
+
+export function fileExistsErrorToString(error: FileExistsError): string {
+  switch (error.kind) {
+    case "NOT_FILE": {
+      return "Path exists but is not a file";
     }
     case "IO_ERROR": {
       return `I/O error: ${error.message}`;

@@ -11,6 +11,8 @@ export {
   Directory,
   directoryExistsErrorToString,
   File,
+  type FileExistsError,
+  fileExistsErrorToString,
   type FileReadError,
   fileReadErrorToString,
   type FileWriteError,
